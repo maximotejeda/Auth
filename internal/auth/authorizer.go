@@ -73,7 +73,6 @@ func createToken(user *db.User) string {
 }
 
 func ValidateToken(next http.Handler) http.Handler {
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if val := r.Header.Get("Authorization"); val == "" {
 			if r.Method == "PUT" || r.Method == "DELETE" || r.Method == "GET" {
