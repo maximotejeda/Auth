@@ -85,6 +85,7 @@ func getUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 }
 
 // Add a user to the database
+// si es  correcta la inclusion del usuario devuelve los datos recien introducidos
 func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	type Password struct {
@@ -142,6 +143,20 @@ func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 // El password Se manejara en otra funcion
 // Se necesita ID Username para actualizar esta funcion correctamente
 func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
+	auth := r.Header.Get("claims")
+	if auth == "" {
+		http.Error(w, "You must be logged in to access", 404)
+		return
+	}
+	log.Print("Calling edit authenticated ", auth)
+
+	logedUser := db.User{}
+	err := json.Unmarshal([]byte(auth), &logedUser)
+	if err != nil {
+		log.Print(err)
+	}
+	logedUser.Query(data)
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write([]byte("Incorrect Body."))
@@ -155,6 +170,7 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Hay un problema con el json.", 404)
 		return
 	}
+
 	if user.IsEmpty() {
 		http.Error(w, "Request Body must contains an username or id To delete a resource.", 404)
 		log.Print("ERROR! No user name when trying to delete an user from database.")
@@ -164,8 +180,13 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "user not in database.", 404)
 		return
 	}
+
 	lastuser := db.User{Id: user.Id, UserName: user.UserName}
 	lastuser.Query(data)
+	if logedUser.UserName != user.UserName {
+		http.Error(w, "You can edit only your own data.", 401)
+		return
+	}
 	if user.Name != "" && user.Name != lastuser.Name {
 		lastuser.Name = user.Name
 	}
@@ -185,6 +206,20 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 // El json de acceso debe proveer id o username para funcionar
 // Estara protegida por un middleware que verificara el token de acceso
 func deleteUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
+	// start comprobacion
+	auth := r.Header.Get("claims")
+	if auth == "" {
+		http.Error(w, "You must be logged in to access", 404)
+		return
+	}
+	log.Print("Calling edit authenticated ", auth)
+
+	logedUser := db.User{}
+	err := json.Unmarshal([]byte(auth), &logedUser)
+	if err != nil {
+		log.Print(err)
+	}
+	// Aqui auth Ends
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		w.Write([]byte("Incorrect Body."))
