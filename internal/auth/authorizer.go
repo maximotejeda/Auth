@@ -77,14 +77,14 @@ func ValidateToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if val := r.Header.Get("Authorization"); val == "" {
 			if r.Method == "PUT" || r.Method == "DELETE" || r.Method == "GET" {
-				http.Error(w, "Need Authentication to access", 404)
+				http.Error(w, "Need Authentication to access the required resource.", 404)
 				return
 			}
 			r.Header.Set("claims", "")
 			next.ServeHTTP(w, r)
 			return
 		}
-		log.Print("dentro de dentro de middleware")
+		//		log.Print("dentro de dentro de middleware")
 		bearer := r.Header.Get("Authorization")
 		value := bearer[len("bearer "):]
 		//log.Print(token)
