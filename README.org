@@ -1,0 +1,37 @@
+#+TITLE: Autenticacion JWT API
+#+AUTHOR: Maximo Tejeda
+#+EMAIL: maximotejeda@gmail.com
+
+
+* Intro:
+  - Razones:
+    Esto es un hobby en mi tiempo libre adelanto lo que considero podria serme de utilidad en un futuro.
+    Este proyecto es un primer contacto con Go, tengo intenciones de ir implementando features segun vaya aprendiendo nuevas cosas en go, el funcionamiento que he decidido para la api puede no sea lo mas correcto pero es con el fin ir poniendo a prueba lo que vaya estudiando.
+
+  - Referencias:
+    Las Principales referencias en este desarrollo:
+    1. The Go Programming Language
+    2. Webapps in Go 
+    3. Get Programming With Go
+
+  - Desiciones:
+    Podria ser un poco asertado por mi parte, pero he decidido adoptar en todo lo posible la stdlib de go para realizar la mayoria de los procesos de la api, siempre intentando no reinventar la rueda.
+
+    Para las request *POST PUT y DELETE* he optado por usar JSON en lugar de forms para el procesado de los datos colectados en el front.
+
+    Quiero crear un sistema de autenticacion *JWT*.
+  
+    Conozco poco de cryptografia por lo que he decidido utilizar *RSA512 llaves publica y privada* para la firma y validacion de los jwt.
+
+    Las llaves son generadas de forma automatica en el folder *./keys* esta vinculado a otro repositorio que utilizare para conecciones ssh en futuras herramientas.
+
+    El proyecto que creara las llaves de forma automatica estara tambien en otro proyecto aun no nombrado.
+  
+    Los bytes de creacion de las llaves son generado por "crypto/rand".
+  
+    Tengo conocimientos nulos de SQL por lo que opte por utilizar SQLITE Como base de datos, con las opciones de MEM y cahe habilitadas.
+
+    La base de datos Se creara en un folder llamado *./db* de forma automatica en caso de no existir, de lo contrario la api establecera conexion con la db.
+
+    Al iniciar por primera vez se creara la tabla usuario con los campos establecidos en la sentencia sql dentro de el paquete db.
+    

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    
+    <title>index</title>
+  </head>
+  <body class="bg-gray-100">
+    <script src="//unpkg.com/alpinejs" defer></script>
+    <div x-data id="root">
+      <div id="cabecera" x-effect="console.log($store.auth.loged)">
+	<nav class='container mx-auto' >
+	    <ul class="flex">
+	      <li :class="$store.auth.showLogin ? 'ml-auto text-xl px-3 bg-blue-200 ' : 'ml-auto text-xl hover:bg-blue-200 px-3' ">
+		<a href="#"
+		   @click="()=>login()"
+		   x-text="$store.auth.loged ? 'Loged As '+ $store.auth.username : 'Login'">
+		</a>
+	      </li>
+	      <li class="ml-10 text-xl mr-2" >
+		<a href="#"
+		   @click="()=>logout()"
+		   x-text="$store.auth.loged ? 'Logout' : 'Register'">
+		</a>
+	      </li>
+	    </ul>
+	  </nav>
+	<div @click.outside="$store.auth.showLogin = false"
+	     id="loginform"
+	     x-show="!$store.auth.loged && $store.auth.showLogin"
+	     class="container mx-auto flex 1">
+	  
+	  <form  action="http://localhost:8080/user/login"
+		 @submit.prevent="authSubmiter(event)"
+		 method="POST"
+		 class="ml-auto mr-2 flex shadow-lg rounded md:flex-row flex-col bg-blue-200 p-2">
+	    <div>
+	      <label
+		class="mr-2 text-sm"
+		for="username">
+		Username
+	      </label>
+	      <input id="username"
+		     required
+		     class="w-32 md:w-40 rounded text-md"
+		     name="username"
+		     type="text"
+		     placeholder="Write your username" />
+	    </div>
+	    <div>
+	      <label
+		class="mr-2 text-sm"
+		for="password">
+		Password
+	      </label>
+	    
+	      <input id="password"
+		     required class="w-32 md:w-40 text-md rounded"
+		     name="password"
+		     type="password"
+		     placeholder="Write your Password"/>
+	    </div>
+	    <div class="flex">
+	      <input id="submit"
+		     class="bg-blue-400 ml-auto text-white mt-3 ml-2 px-1 rounded-md"
+		     type="submit"
+		     name="submit"
+		     value="submit"/>
+	    </div>
+	  </form>
+	</div>
+      <!-- </div> -->
+    </div>
+    <div id="contenido">
+      <div x-show="$store.auth.token !== ''"
+	   class="flex"
+	   >
+	<button
+	  @click="restrictedRequest()"
+	  class="mx-auto bg-green-400">Submit Protected Request</button>
+		  
+      </div>
+    </div>			 
+    <div id="pie">
+    </div>
+</div>
+</body>
+<script>
+  // Listener when alpine is ready we create a store
+  document.addEventListener('alpine:init', ()=>{
+      Alpine.store('auth', {
+	  loged: false,
+	  showLogin: false,
+	  showReg: false,
+	  token: '',
+	  username: 'Maximo',
+	  email: '',
+      })     
+  })
+ 
+  let authSubmiter = (form)=>{
+      let username = form.target.username.value;
+      let password = form.target.password.value;
+      let json = JSON.stringify({username, password})
+      fetch('/user/login',{method: "POST", body: json})
+	  .then(body=>body.json())
+	  .then(body=>{
+	      Alpine.store('auth').token = body.Token
+	      Alpine.store('auth').username = body.UserName
+	      Alpine.store('auth').email = body.Email
+	      console.warn(Alpine.store('auth').token)
+	      
+	  })
+      
+      Alpine.store('auth').loged = true
+      console.warn(json);
+      // setTimeout(()=>Alpine.store('auth').token = "token", 2500)
+      return false
+  }
+  let restrictedRequest = ()=>{
+      fetch("/user/", { headers: {
+	  Authorization: `Bearer ${Alpine.store('auth').token}`}
+				    })
+	  .then(res=>res.json())
+	  .then(res=>console.warn(res))
+      
+  }
+  let login = (event)=>{
+      if (Alpine.store('auth').showLogin == false){
+	  Alpine.store('auth').showLogin = true
+	  return 
+      }
+  }
+  let logout = (event)=>{
+      if (Alpine.store('auth').loged == true){
+	  Alpine.store('auth').loged = false
+	  return
+      }
+      Alpine.store('auth').showReg = true
+      
+  }
+
+  
+    
+</script>
+  </html>
