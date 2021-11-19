@@ -285,6 +285,7 @@ func login(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	w.Write([]byte("Incorrect Password"))
+	http.Error(w, "Usuario or password Incorrect", 401)
+	//w.Write([]byte("Incorrect Password"))
 
 }
