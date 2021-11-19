@@ -4,7 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/maximotejeda/auth/internal/auth"
+	adm "github.com/maximotejeda/auth/internal/adm"
+	auth "github.com/maximotejeda/auth/internal/auth"
 	_ "github.com/maximotejeda/auth/internal/db"
 )
 
@@ -13,6 +14,7 @@ func main() {
 	log.Print("Server Running on port: " + PORT)
 	huser := http.HandlerFunc(auth.UserFunc)
 	http.Handle("/user/", auth.ValidateToken(huser))
+	http.HandleFunc("/adm/", adm.UserFunc)
 	http.HandleFunc("/", rootServe)
 	log.Fatal(http.ListenAndServe(PORT, nil))
 }
