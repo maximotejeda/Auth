@@ -15,16 +15,16 @@
 	<nav class='container mx-auto' >
 	    <ul class="flex">
 	      <li :class="$store.auth.showLogin ? 'ml-auto text-xl px-3 bg-blue-200 ' : 'ml-auto text-xl hover:bg-blue-200 px-3' ">
-		<a href="#"
+		<button
 		   @click="()=>login()"
 		   x-text="$store.auth.loged ? 'Loged As '+ $store.auth.username : 'Login'">
-		</a>
+		</button>
 	      </li>
 	      <li class="ml-10 text-xl mr-2" >
-		<a href="#"
+		<button
 		   @click="()=>logout()"
 		   x-text="$store.auth.loged ? 'Logout' : 'Register'">
-		</a>
+		</button>
 	      </li>
 	    </ul>
 	  </nav>
@@ -71,6 +71,71 @@
 		     value="submit"/>
 	    </div>
 	  </form>
+	</div>
+	<div class="flex"
+	     x-data="{pwd: '', repwd: '', samepwd: true}"
+	     x-show="$store.auth.showReg === true">
+	  <div class="bg-white mx-auto md:w-96 shadow-lg rounded-md">
+	    <h1 class="text-2xl mb-4 text-center">Registro</h1>
+	    <form
+	      action="http://localhost:8080/user/REGISTER"
+	      @submit.prevent="registerUser(event)"
+	      method="POST"
+	      class="flex flex-col" >
+	      <div class="flex">
+		<div class="flex flex-col w-44 mx-2">
+	      <label>Name</label>
+	      <input class="flex-1 ring-2 rounded"
+		     type="text"
+		     required
+		     name="name"
+		     placeholder="Input Name">
+		</div>
+		<div class="flex flex-col w-44 mx-2">
+	      <label>Last Name</label>
+	      <input class="flex-1 ring-2 rounded"
+		     riquired
+		     type="text"
+		     name="lastname"
+		     placeholder="Input Last Name">
+	      
+		</div>
+	      </div>
+	      <label class="ml-2"> Username </label>
+	      <input class="mx-2 ring-2 rounded"
+		     required
+		     type="text"
+		     autocomplete="off"
+		     name="username"
+		     placeholder="Input Username" />
+	      <label class="ml-2">Password</label>
+	      <input class="mx-2 ring-2 rounded"
+		     type="password"
+		     required
+		     min="8"
+		     name="password"
+		     @change="(e)=>{pwd = e.target.value; repwd ? samepwd = pwd === repwd: '' }"
+		     placeholder="Input password">
+	      <label class="ml-2">Re-Password</label>
+	      <input class="mx-2 ring-2 rounded"
+		     type="password"
+		     required
+		     :disabled="pwd === ''"
+		     min="8"
+		     @change="(e)=>{repwd = e.target.value; samepwd = repwd === pwd}"
+		     name="repass"
+		     placeholder="Confirm Password">
+	      <span class="text-red-400 text-sm"
+		    x-show="!samepwd">El password no coincide</span>
+	      <label class="ml-2">Email</label>
+	      <input class="mx-2 ring-2 rounded"
+		     type="email"
+		     required
+		     name="email"
+		     placeholder="Input Email">
+	      <input class="flex-none w-18 rounded-md mx-auto my-4 bg-purple-500 text-white p-1 hover:bg-purple-700" type="submit" value="Register"/>
+	    </form>
+	</div>	
 	</div>
       <!-- </div> -->
     </div>
@@ -120,6 +185,18 @@
       // setTimeout(()=>Alpine.store('auth').token = "token", 2500)
       return false
   }
+  let registerUser= (form) => {
+      let username = form.target.username.value
+      let name = form.target.name.value
+      let lastname = form.target.lastname.value
+      let password = form.target.password.value
+      let email = form.target.email.value
+      let json = JSON.stringify({name, lastname, username, password, email})
+      fetch('/user/register',{method: "POST", body: json})
+      console.log(json)
+      
+      return
+  }
   let restrictedRequest = ()=>{
       fetch("/user/", { headers: {
 	  Authorization: `Bearer ${Alpine.store('auth').token}`}
@@ -129,17 +206,26 @@
       
   }
   let login = (event)=>{
-      if (Alpine.store('auth').showLogin == false){
-	  Alpine.store('auth').showLogin = true
+      if (!Alpine.store('auth').showLogin){
+	  Alpine.store('auth').showReg = false;
+	  Alpine.store('auth').showLogin = true;
+	  
 	  return 
       }
   }
   let logout = (event)=>{
       if (Alpine.store('auth').loged == true){
+	  Alpine.store('auth').token = ""
 	  Alpine.store('auth').loged = false
 	  return
       }
-      Alpine.store('auth').showReg = true
+      if (Alpine.store('auth').showReg){
+	  Alpine.store('auth').showReg = false
+	  return
+      }
+      else {
+	  Alpine.store('auth').showReg = true
+      }
       
   }
 
