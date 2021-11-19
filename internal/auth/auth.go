@@ -52,6 +52,11 @@ func UserFunc(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// Set response to aplication/json
+func setJson(w *http.ResponseWriter) {
+	(*w).Header().Set("Content-Type", "aplication/json")
+}
+
 // get a single user with the parameters on the body
 // Queremos que sea REST compliant asi que aceptaremos busqueda de usuario por parametros en la URL
 func getUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
@@ -67,21 +72,9 @@ func getUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print(err)
 	}
+	setJson(&w)
 	user.Query(data)
-	// si el json trajo las keys correctas por lo menos una haz la query
-	//if !user.IsEmpty() {
-	//	user.Query(data)
-	//}
-	// user.Exist nos dice si el usuario existe en la base de datos
-	// como  queremos permitir busquedas tanto por username como por id exist luego de query
-	//if !user.Exist(data) {
-	//	http.Error(w, "No se encontraron Resultados", 404)
-	//	log.Print(user)
-	//	return
-	//}
 	json.NewEncoder(w).Encode(user)
-	//w.Write([]byte(user.String()))
-	//w.Write([]byte("\n" + who.String()))
 }
 
 // Add a user to the database
@@ -94,11 +87,10 @@ func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Something went wrong with the Request.", 400)
-		//w.Write([]byte("Not Posible to read body"))
 		return
 	}
 	defer r.Body.Close()
-	//w.Write(body)
+
 	passwd := Password{}
 	user := db.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
@@ -132,9 +124,8 @@ func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	id, rows := user.Add(data)
 	log.Print("ID: ", id, " -- Columnas: ", rows)
 	user.Query(data)
+	setJson(&w)
 	json.NewEncoder(w).Encode(user)
-	//	w.Write([]byte("success"))
-
 }
 
 // Edit parameters from a user in the database
@@ -198,8 +189,9 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	}
 
 	lastuser.Update(data)
+	setJson(&w)
+	json.NewEncoder(w).Encode(lastuser)
 
-	w.Write([]byte(lastuser.String()))
 }
 
 // Delete a user From the database
@@ -264,8 +256,6 @@ func login(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	passwd := password{}
 	user := db.User{}
 
-	log.Print(string(body))
-
 	if err := json.Unmarshal(body, &user); err != nil {
 		log.Print(err)
 	}
@@ -289,6 +279,7 @@ func login(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 			User:  user,
 			Token: token,
 		}
+		setJson(&w)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
 		json.NewEncoder(w).Encode(resp)
 
