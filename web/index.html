@@ -13,21 +13,27 @@
     <div x-data id="root">
       <div id="cabecera" x-effect="console.log($store.auth.loged)">
 	<nav class='container mx-auto' >
-	    <ul class="flex">
-	      <li :class="$store.auth.showLogin ? 'ml-auto text-xl px-3 bg-blue-200 ' : 'ml-auto text-xl hover:bg-blue-200 px-3' ">
-		<button
-		   @click="()=>login()"
-		   x-text="$store.auth.loged ? 'Loged As '+ $store.auth.username : 'Login'">
-		</button>
-	      </li>
-	      <li class="ml-10 text-xl mr-2" >
-		<button
-		   @click="()=>logout()"
-		   x-text="$store.auth.loged ? 'Logout' : 'Register'">
-		</button>
-	      </li>
-	    </ul>
-	  </nav>
+	  <ul class="flex">
+	    <li class="mx-auto">
+	      <span x-show="$store.auth.loginError !== ''"
+		    x-text="$store.auth.loginError"
+		    class="bg-red-300 text-white text-xl rounded px-4"
+		    ></span>
+	    </li>
+	    <li :class="$store.auth.showLogin ? 'ml-auto text-xl px-3 bg-blue-200 ' : 'ml-auto text-xl hover:bg-blue-200 px-3' ">
+	      <button
+		@click="()=>login()"
+		x-text="$store.auth.loged ? 'Loged As '+ $store.auth.username : 'Login'">
+	      </button>
+	    </li>
+	    <li class="ml-10 text-xl mr-2" >
+	      <button
+		@click="()=>logout()"
+		x-text="$store.auth.loged ? 'Logout' : 'Register'">
+	      </button>
+	    </li>
+	  </ul>
+	</nav>
 	<div @click.outside="$store.auth.showLogin = false"
 	     id="loginform"
 	     x-show="!$store.auth.loged && $store.auth.showLogin"
@@ -37,7 +43,8 @@
 		 @submit.prevent="authSubmiter(event)"
 		 method="POST"
 		 class="ml-auto mr-2 flex shadow-lg rounded md:flex-row flex-col bg-blue-200 p-2">
-	    <div>
+	    
+	    <div class="flex">
 	      <label
 		class="mr-2 text-sm"
 		for="username">
@@ -50,7 +57,7 @@
 		     type="text"
 		     placeholder="Write your username" />
 	    </div>
-	    <div>
+	    <div class="flex">
 	      <label
 		class="mr-2 text-sm"
 		for="password">
@@ -58,11 +65,13 @@
 	      </label>
 	    
 	      <input id="password"
-		     required class="w-32 md:w-40 text-md rounded"
+		     required
+		     class="w-32 md:w-40 text-md rounded"
 		     name="password"
 		     type="password"
 		     placeholder="Write your Password"/>
 	    </div>
+	    <br>
 	    <div class="flex">
 	      <input id="submit"
 		     class="bg-blue-400 ml-auto text-white mt-3 ml-2 px-1 rounded-md"
@@ -163,6 +172,7 @@
 	  token: '',
 	  username: 'Maximo',
 	  email: '',
+	  loginError: '',
       })     
   })
  
@@ -171,16 +181,26 @@
       let password = form.target.password.value;
       let json = JSON.stringify({username, password})
       fetch('/user/login',{method: "POST", body: json})
-	  .then(body=>body.json())
+	  .then(body=>{
+	      if (body.status === 401){
+		  Alpine.store('auth').loginError = "Usuario o Password incorrecto."
+		  setTimeout(()=>Alpine.store('auth').loginError = '', 4000)
+		  throw("Error en request usuario o password incorrecto.")
+	      }
+	      return body.json()
+	  })
 	  .then(body=>{
 	      Alpine.store('auth').token = body.Token
 	      Alpine.store('auth').username = body.UserName
 	      Alpine.store('auth').email = body.Email
 	      console.warn(Alpine.store('auth').token)
+	      Alpine.store('auth').loged = true
+	  }).catch(
+	      err=>console.log("Ocurrio un Error", err)
 	      
-	  })
+	  )
       
-      Alpine.store('auth').loged = true
+      
       console.warn(json);
       // setTimeout(()=>Alpine.store('auth').token = "token", 2500)
       return false
@@ -193,7 +213,7 @@
       let email = form.target.email.value
       let json = JSON.stringify({name, lastname, username, password, email})
       fetch('/user/register',{method: "POST", body: json})
-      console.log(json)
+      //console.log(json)
       
       return
   }
@@ -215,16 +235,18 @@
   }
   let logout = (event)=>{
       if (Alpine.store('auth').loged == true){
-	  Alpine.store('auth').token = ""
-	  Alpine.store('auth').loged = false
+	  Alpine.store('auth').token = "";
+	  Alpine.store('auth').loged = false;
+	  Alpine.store('auth').username = "";
+	  Alpine.store('auth').email = "";
 	  return
       }
       if (Alpine.store('auth').showReg){
-	  Alpine.store('auth').showReg = false
+	  Alpine.store('auth').showReg = false;
 	  return
       }
       else {
-	  Alpine.store('auth').showReg = true
+	  Alpine.store('auth').showReg = true;
       }
       
   }
