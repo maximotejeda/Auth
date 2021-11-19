@@ -47,7 +47,7 @@ func UserFunc(w http.ResponseWriter, r *http.Request) {
 		deleteUser(database, w, r)
 	default:
 		w.Header().Set("Allow", http.MethodPost+" "+http.MethodGet)
-		http.Error(w, "Method not Allowed", 405)
+		http.Error(w, "Method not Allowed", 400)
 
 	}
 }
@@ -82,8 +82,6 @@ func getUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 	//w.Write([]byte(user.String()))
 	//w.Write([]byte("\n" + who.String()))
-
-	return
 }
 
 // Add a user to the database
@@ -94,7 +92,8 @@ func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		w.Write([]byte("Not Posible to read body"))
+		http.Error(w, "Something went wrong with the Request.", 400)
+		//w.Write([]byte("Not Posible to read body"))
 		return
 	}
 	defer r.Body.Close()
@@ -103,38 +102,37 @@ func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	user := db.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
 		log.Print(err)
-		http.Error(w, "Hay un problema con el json.", 404)
+		http.Error(w, "Hay un problema con el json y la informacion de usuario.", 400)
 		return
 	}
 	if err := json.Unmarshal(body, &passwd); err != nil {
 		log.Print(err)
-		http.Error(w, "Hay un problema con el json y el password.", 404)
+		http.Error(w, "Hay un problema con el json y el password.", 400)
 		return
 	}
 	if user.IsEmpty() {
-		http.Error(w, "Request Body must contains an user name To create new user.", 404)
+		http.Error(w, "Request Body must contains an user name To create new user.", 400)
 		log.Print("ERROR! No user name when trying to add an user to database.")
 		return
 	}
 	if user.Exist(data) {
-		http.Error(w, "Username Alredy existed", 404)
+		http.Error(w, "Username Alredy existed", 409)
 		return
 	}
 
 	if passwd.Password == "" {
 		log.Print("ERROR! Password required to add user Request Aborted.", passwd)
-		http.Error(w, "Password Required", 401)
+		http.Error(w, "Password Required", 400)
 		return
 	}
 	user.PasswordHash(passwd.Password)
 	user.Rol = "viewer"
-	// si el json trajo las keys correctas por lo menos una haz la query
-	//if !user.IsEmpty() {
-	//	user.Query(data)
-	//}
+
 	id, rows := user.Add(data)
 	log.Print("ID: ", id, " -- Columnas: ", rows)
-	w.Write([]byte("success"))
+	user.Query(data)
+	json.NewEncoder(w).Encode(user)
+	//	w.Write([]byte("success"))
 
 }
 
