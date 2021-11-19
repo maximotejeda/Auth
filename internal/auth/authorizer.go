@@ -115,7 +115,60 @@ func ValidateToken(next http.Handler) http.Handler {
 		if err != nil {
 			log.Print("parsing claims", err)
 		}
+		r.Header.Set("claims", string(jclaims))
+
+		next.ServeHTTP(w, r)
+	})
+
+}
+
+func ValidateAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		//Si el header esta vacio devuelve
+		if val := r.Header.Get("Authorization"); val == "" {
+			http.Error(w, "Authentication is required to access.", 401)
+			return
+		}
+		bearer := r.Header.Get("Authorization")
+		value := bearer[len("bearer "):]
+		//log.Print(token)
+
+		verifyBytes, err := ioutil.ReadFile("keys/pubRsaKey.pub")
+		if err != nil {
+			log.Print("Error reading public key: ", err)
+		}
+
+		verifyPubKey, err := jwt.ParseRSAPublicKeyFromPEM(verifyBytes)
+		if err != nil {
+			log.Print("Error verifying public key: ", err, verifyPubKey)
+			return
+		}
+
+		token, err := jwt.ParseWithClaims(value, &costumClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return verifyPubKey, nil
+		})
+		if err != nil {
+			log.Print("error parseo token", err)
+			http.Error(w, "not authenticated", 404)
+			r.Header.Set("Authenticated", "false")
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		claims := token.Claims
+		jclaims, err := json.Marshal(claims)
 		log.Print(claims)
+		if err != nil {
+			log.Print("parsing claims", err)
+		}
+		user := db.User{}
+		json.Unmarshal(jclaims, &user)
+
+		if user.Rol != "admin" {
+			http.Error(w, "Usuario no es no esta autorizado para acceder este recurso.", 401)
+			return
+		}
+
 		r.Header.Set("claims", string(jclaims))
 
 		next.ServeHTTP(w, r)
