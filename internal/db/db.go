@@ -170,6 +170,36 @@ func (u *User) ByLastName(last string, data *sql.DB) []User {
 	return usersList
 }
 
+func (u *User) GetAll(data *sql.DB) []User {
+	getUser := "select id, username, name, lastname, email, rol, active, created, updated from user"
+	QgetUsers, err := data.Prepare(getUser)
+	if err != nil {
+		fmt.Errorf("error raro aqui %s", err)
+	}
+	var usersList []User
+	log.Println(getUser)
+	rows, err := QgetUsers.Query()
+	//rows, err := data.Query(getUser)
+	if err != nil {
+		fmt.Errorf("error raro aqui %s", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&u.Id, &u.UserName, &u.Name, &u.LastName, &u.Email, &u.Rol, &u.Active, &u.Created, &u.Updated)
+		usersList = append(usersList, *u)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+	}
+	err = rows.Err()
+	if err != nil {
+		log.Print("Aqui en rows pasa algo")
+		log.Fatal(err)
+	}
+	return usersList
+}
+
 // query para hacer dinamica la busqueda solo por id y usuario las demas son manuales
 func (u *User) Query(data *sql.DB) {
 	if u.Id != 0 {
