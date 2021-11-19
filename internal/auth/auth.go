@@ -79,8 +79,8 @@ func getUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	//	log.Print(user)
 	//	return
 	//}
-
-	w.Write([]byte(user.String()))
+	json.NewEncoder(w).Encode(user)
+	//w.Write([]byte(user.String()))
 	//w.Write([]byte("\n" + who.String()))
 
 	return
