@@ -60,7 +60,7 @@ func createToken(user *db.User) string {
 	atClaims["username"] = user.UserName
 	atClaims["rol"] = user.Rol
 	atClaims["email"] = user.Email
-	atClaims["exp"] = time.Now().Add(time.Minute * 2).Unix()
+	atClaims["exp"] = time.Now().Add(time.Minute * 60).Unix()
 
 	t := jwt.New(jwt.SigningMethodRS512)
 	t.Claims = &atClaims
