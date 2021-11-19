@@ -15,7 +15,7 @@ func main() {
 	huser := http.HandlerFunc(auth.UserFunc)
 	hadmin := http.HandlerFunc(adm.UserFunc)
 	http.Handle("/user/", auth.ValidateToken(huser))
-	http.Handle("/adm/", auth.ValidateAdmin(hadmin))
+	http.Handle("/adm/", auth.ValidateToken(auth.ValidateAdmin(hadmin)))
 	http.HandleFunc("/", rootServe)
 	log.Fatal(http.ListenAndServe(PORT, nil))
 }
