@@ -170,6 +170,7 @@ func (u *User) ByLastName(last string, data *sql.DB) []User {
 	return usersList
 }
 
+//Get All data in the table.
 func (u *User) GetAll(data *sql.DB) []User {
 	getUser := "select id, username, name, lastname, email, rol, active, created, updated from user"
 	QgetUsers, err := data.Prepare(getUser)
@@ -177,7 +178,7 @@ func (u *User) GetAll(data *sql.DB) []User {
 		fmt.Errorf("error raro aqui %s", err)
 	}
 	var usersList []User
-	log.Println(getUser)
+
 	rows, err := QgetUsers.Query()
 	//rows, err := data.Query(getUser)
 	if err != nil {
@@ -190,12 +191,10 @@ func (u *User) GetAll(data *sql.DB) []User {
 		if err != nil {
 			fmt.Println(err)
 		}
-
 	}
 	err = rows.Err()
 	if err != nil {
-		log.Print("Aqui en rows pasa algo")
-		log.Fatal(err)
+		log.Print("rows: Aqui en rows pasa algo: ", err)
 	}
 	return usersList
 }
