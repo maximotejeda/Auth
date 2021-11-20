@@ -3,7 +3,6 @@ package auth
 import (
 	"database/sql"
 	"encoding/json"
-
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -31,6 +30,8 @@ func UserFunc(w http.ResponseWriter, r *http.Request) {
 			getUsers(database, w, r)
 		case "user":
 			getUser(database, w, r)
+		default:
+			http.Error(w, "Requested resource not available.", 404)
 		}
 
 	case "POST":
@@ -40,7 +41,7 @@ func UserFunc(w http.ResponseWriter, r *http.Request) {
 		case "register":
 			addUser(database, w, r)
 		default:
-			http.Error(w, "Recurso solicitado no Disponible", 404)
+			http.Error(w, "Requested resource not available!", 404)
 		}
 
 	case "PUT":
@@ -50,7 +51,7 @@ func UserFunc(w http.ResponseWriter, r *http.Request) {
 		deleteUser(database, w, r)
 	default:
 		w.Header().Set("Allow", http.MethodPost+" "+http.MethodGet)
-		http.Error(w, "Method not Allowed", 400)
+		http.Error(w, "Method not Allowed", http.StatusMethodNotAllowed)
 
 	}
 }
@@ -76,11 +77,10 @@ func getUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 	user.Query(data)
 	if user.Id == 0 {
-		http.Error(w, "Usuario no encontrado", 404)
+		http.Error(w, "Resource not found!", 404)
 		return
 	}
 
-	log.Print(user.String())
 	setJson(&w)
 	json.NewEncoder(w).Encode(user)
 }
@@ -88,43 +88,44 @@ func getUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 // Add a user to the database
 // si es  correcta la inclusion del usuario devuelve los datos recien introducidos
 func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
 	type Password struct {
 		Password string
 	}
 
+	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		http.Error(w, "Something went wrong with the Request.", 400)
+		http.Error(w, "Bad Request!", 400)
 		//w.Write([]byte("Not Posible to read body"))
 		return
 	}
+
 	defer r.Body.Close()
 	//w.Write(body)
 	passwd := Password{}
 	user := db.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
 		log.Print(err)
-		http.Error(w, "Hay un problema con el json y la informacion de usuario.", 400)
+		http.Error(w, "Bad request!", 400)
 		return
 	}
 	if err := json.Unmarshal(body, &passwd); err != nil {
 		log.Print(err)
-		http.Error(w, "Hay un problema con el json y el password.", 400)
+		http.Error(w, "Bad request!", 400)
 		return
 	}
 	if user.IsEmpty() {
-		http.Error(w, "Request Body must contains an user name To create new user.", 400)
+		http.Error(w, "Bad request!", 400)
 		log.Print("ERROR! No user name when trying to add an user to database.")
 		return
 	}
 	if user.Exist(data) {
-		http.Error(w, "Username Alredy existed", 409)
+		http.Error(w, "Username Alredy existed", http.StatusConflict)
 		return
 	}
 
 	if passwd.Password == "" {
-		log.Print("ERROR! Password required to add user Request Aborted.", passwd)
-		http.Error(w, "Password Required", 400)
+		log.Print("adm: adduser: ERROR! Password required to add user Request Aborted.", passwd)
+		http.Error(w, "Bad request!", 400)
 		return
 	}
 	user.PasswordHash(passwd.Password)
@@ -135,8 +136,6 @@ func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	user.Query(data)
 	setJson(&w)
 	json.NewEncoder(w).Encode(user)
-	//	w.Write([]byte("success"))
-
 }
 
 // Edit parameters from a user in the database
@@ -148,25 +147,25 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.Write([]byte("Incorrect Body."))
+		http.Error(w, "Bad request!", 400)
 		return
 	}
 	defer r.Body.Close()
 
 	user := db.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
-		log.Print(err)
-		http.Error(w, "Hay un problema con el json.", 404)
+		log.Print("adm: edit user: unmarshal: ", err)
+		http.Error(w, "Bad Request.", 400)
 		return
 	}
 
 	if user.IsEmpty() {
-		http.Error(w, "Request Body must contains an username or id To delete a resource.", 404)
-		log.Print("ERROR! No user name when trying to delete an user from database.")
+		http.Error(w, "Bad request!", 400)
+		log.Print("adm: edit user: empty: ERROR! No user name when trying to edit an user from database.")
 		return
 	}
 	if !user.Exist(data) {
-		http.Error(w, "user not in database.", 404)
+		http.Error(w, "Resource not found!", 404)
 		return
 	}
 
@@ -200,26 +199,27 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 func deleteUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.Write([]byte("Incorrect Body."))
+		http.Error(w, "Bad request!", 400)
 		return
 	}
 	defer r.Body.Close()
 	user := db.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
 		log.Print(err)
-		http.Error(w, "Hay un problema con el json.", 404)
+		http.Error(w, "Bad request!", 400)
 		return
 	}
 	if user.IsEmpty() {
-		http.Error(w, "Request Body must contains an username or id To delete a resource.", 404)
+		http.Error(w, "Bad request!", 400)
 		log.Print("ERROR! No user name when trying to delete an user from database.")
 		return
 	}
 	if user.Exist(data) {
-		http.Error(w, "user not in database.", 404)
+		http.Error(w, "Resource not found!", 404)
 		return
 	}
 	user.Query(data)
 	user.Delete(data)
+
 	w.Write([]byte("Usuario eliminado\n" + user.String()))
 }
