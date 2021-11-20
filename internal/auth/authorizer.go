@@ -13,10 +13,12 @@ import (
 )
 
 type userInfo struct {
-	Id       int
-	Username string
-	Email    string
-	Rol      string
+	Id         int
+	Username   string
+	Email      string
+	Rol        string
+	Host       string
+	Remoteaddr string
 }
 
 type costumClaims struct {
@@ -31,7 +33,7 @@ func init() {
 }
 
 // Creamos un token
-func createToken(user *db.User) string {
+func createToken(user *db.User, r *http.Request) string {
 	var err error
 	// get private key
 	file, err := ioutil.ReadFile("keys/privateRSAKey")
@@ -61,6 +63,8 @@ func createToken(user *db.User) string {
 	atClaims["rol"] = user.Rol
 	atClaims["email"] = user.Email
 	atClaims["exp"] = time.Now().Add(time.Minute * 60).Unix()
+	atClaims["host"] = r.Host
+	atClaims["remoteaddr"] = r.RemoteAddr
 
 	t := jwt.New(jwt.SigningMethodRS512)
 	t.Claims = &atClaims
@@ -76,7 +80,7 @@ func ValidateToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if val := r.Header.Get("Authorization"); val == "" {
 			if r.Method == "PUT" || r.Method == "DELETE" || r.Method == "GET" {
-				http.Error(w, "Need Authentication to access the required resource.", 404)
+				http.Error(w, "Authentication required!", http.StatusUnauthorized)
 				return
 			}
 			r.Header.Set("claims", "")
@@ -103,8 +107,7 @@ func ValidateToken(next http.Handler) http.Handler {
 			return verifyPubKey, nil
 		})
 		if err != nil {
-			log.Print(err)
-			http.Error(w, "not authenticated", 404)
+			log.Print("Auth: middleware: validate token: parse Token: ", err)
 			r.Header.Set("Authenticated", "false")
 			next.ServeHTTP(w, r)
 			return
@@ -113,10 +116,20 @@ func ValidateToken(next http.Handler) http.Handler {
 		claims := token.Claims
 		jclaims, err := json.Marshal(claims)
 		if err != nil {
-			log.Print("parsing claims", err)
+			log.Print("parsing claims: ", err)
+		}
+		// Hasta aqui el token es valido y esta correcto
+		info := userInfo{}
+		err = json.Unmarshal(jclaims, &info)
+		if err != nil {
+			log.Print("parsing other claims: ", err)
+		}
+		// comprobamos los origenes y destinos del token
+		if info.Remoteaddr != r.RemoteAddr {
+			http.Error(w, "Destination Error!", http.StatusForbidden)
+			return
 		}
 		r.Header.Set("claims", string(jclaims))
-
 		next.ServeHTTP(w, r)
 	})
 
@@ -126,16 +139,16 @@ func ValidateAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims := r.Header.Get("claims")
 		if claims == "" {
-			http.Error(w, "Authentication is needed to access this resource", 401)
+			http.Error(w, "Authentication required!", http.StatusUnauthorized)
 			return
 		}
 		user := db.User{}
 		err := json.Unmarshal([]byte(claims), &user)
 		if err != nil {
-			log.Print("ValidateAdmin: UserCreation: ", err)
+			log.Print("Auth: ValidateAdmin: UserCreation: ", err)
 		}
 		if user.Rol != "admin" {
-			http.Error(w, "Priviledges are required to access this resource.", 401)
+			http.Error(w, "Priviledges are required!", http.StatusForbidden)
 			return
 		}
 		r.Header.Set("isAdmin", "true")
