@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/maximotejeda/auth/internal/db"
+	"auth/internal/db"
 )
 
 var database *sql.DB

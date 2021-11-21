@@ -4,9 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	adm "github.com/maximotejeda/auth/internal/adm"
-	auth "github.com/maximotejeda/auth/internal/auth"
-	_ "github.com/maximotejeda/auth/internal/db"
+	adm "auth/internal/adm"
+	auth "auth/internal/auth"
+	_ "auth/internal/db"
 )
 
 func main() {

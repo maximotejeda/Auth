@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
+	st "auth/internal/structure"
 	_ "github.com/mattn/go-sqlite3"
-	st "github.com/maximotejeda/auth/internal/structure"
 	"golang.org/x/crypto/bcrypt"
 )
 

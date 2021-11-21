@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"auth/internal/db"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/maximotejeda/auth/internal/db"
 	"github.com/maximotejeda/netrsakeys"
 )
 
