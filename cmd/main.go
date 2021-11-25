@@ -19,9 +19,10 @@ func main() {
 	log.Print("Server Running on port: " + PORT)
 	huser := http.HandlerFunc(auth.UserFunc)
 	hadmin := http.HandlerFunc(adm.UserFunc)
+	hrootServe := http.HandlerFunc(rootServe)
 	http.Handle("/user/", auth.CORS(auth.ValidateToken(huser)))
-	http.Handle("/adm/", auth.ValidateToken(auth.ValidateAdmin(hadmin)))
-	http.HandleFunc("/", rootServe)
+	http.Handle("/adm/", auth.CORS(auth.ValidateToken(auth.ValidateAdmin(hadmin))))
+	http.Handle("/", auth.CORS(hrootServe))
 	log.Fatal(http.ListenAndServe(PORT, nil))
 }
 

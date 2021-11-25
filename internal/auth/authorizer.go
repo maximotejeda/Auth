@@ -159,27 +159,32 @@ func ValidateAdmin(next http.Handler) http.Handler {
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		originList := []string{
-			"http://localhost:8080",
+
 			"http://localhost:8000",
 			"http://www.maximotejeda.com",
 			"https://www.maximotejeda.com",
 			"htts://maximotejeda.com",
 		}
+		isInList := false
 		origin := r.Header.Get("Origin")
+		// itermos sobre los origenes si lo encontramos Break
 		for _, origi := range originList {
 			if origi == origin {
+				isInList = true
 				break
 			} else {
-				next.ServeHTTP(w, r)
+				isInList = false
 			}
 		}
-
-		w.Header().Set("Content-Type", "text/html; charset=ascii")
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
+		// si el origen esta en la lista setea los headers
+		if isInList {
+			w.Header().Set("Content-Type", "text/html; charset=ascii")
+			w.Header().Set("Access-Control-Allow-Origin", origin)
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
+		}
 		if r.Method == "OPTIONS" {
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
-			w.Header().Set("Access-Control-Allow-Methods", "GET,POST")
+			w.Header().Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE")
 
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token, Authorization")
 			return
