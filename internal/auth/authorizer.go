@@ -155,3 +155,36 @@ func ValidateAdmin(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 	})
 }
+
+func CORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		originList := []string{
+			"http://localhost:8080",
+			"http://localhost:8000",
+			"http://www.maximotejeda.com",
+			"https://www.maximotejeda.com",
+			"htts://maximotejeda.com",
+		}
+		origin := r.Header.Get("Origin")
+		for _, origi := range originList {
+			if origi == origin {
+				break
+			} else {
+				next.ServeHTTP(w, r)
+			}
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=ascii")
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
+		if r.Method == "OPTIONS" {
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Methods", "GET,POST")
+
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token, Authorization")
+			return
+		} else {
+			next.ServeHTTP(w, r)
+		}
+	})
+}

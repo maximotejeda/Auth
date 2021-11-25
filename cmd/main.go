@@ -1,6 +1,8 @@
 package main
 
 import (
+	"embed"
+
 	"log"
 	"net/http"
 
@@ -9,12 +11,15 @@ import (
 	_ "auth/internal/db"
 )
 
+//go:embed web
+var index embed.FS
+
 func main() {
-	PORT := "0.0.0.0:8080"
+	PORT := "0.0.0.0:8000"
 	log.Print("Server Running on port: " + PORT)
 	huser := http.HandlerFunc(auth.UserFunc)
 	hadmin := http.HandlerFunc(adm.UserFunc)
-	http.Handle("/user/", auth.ValidateToken(huser))
+	http.Handle("/user/", auth.CORS(auth.ValidateToken(huser)))
 	http.Handle("/adm/", auth.ValidateToken(auth.ValidateAdmin(hadmin)))
 	http.HandleFunc("/", rootServe)
 	log.Fatal(http.ListenAndServe(PORT, nil))
@@ -28,6 +33,8 @@ func rootServe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p = "web/index.html"
-	http.ServeFile(w, r, p)
-
+	//http.ServeFile(w, r, p)
+	//http.FileServer(http.FS(index))
+	file, _ := index.ReadFile("web/index.html")
+	w.Write(file)
 }
