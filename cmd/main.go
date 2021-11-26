@@ -2,9 +2,9 @@ package main
 
 import (
 	"embed"
-
 	"log"
 	"net/http"
+	"os"
 
 	adm "auth/internal/adm"
 	auth "auth/internal/auth"
@@ -15,15 +15,18 @@ import (
 var index embed.FS
 
 func main() {
-	PORT := "0.0.0.0:8000"
-	log.Print("Server Running on port: " + PORT)
+	//envs inicio server
+	PORT := os.Getenv("DEVPORT")
+	ADDR := os.Getenv("DEVADDRESS")
+
+	log.Print("Server Running on port: " + ADDR + ":" + PORT)
 	huser := http.HandlerFunc(auth.UserFunc)
 	hadmin := http.HandlerFunc(adm.UserFunc)
 	hrootServe := http.HandlerFunc(rootServe)
 	http.Handle("/user/", auth.CORS(auth.ValidateToken(huser)))
 	http.Handle("/adm/", auth.CORS(auth.ValidateToken(auth.ValidateAdmin(hadmin))))
 	http.Handle("/", auth.CORS(hrootServe))
-	log.Fatal(http.ListenAndServe(PORT, nil))
+	log.Fatal(http.ListenAndServe(ADDR+":"+PORT, nil))
 }
 
 func rootServe(w http.ResponseWriter, r *http.Request) {

@@ -1,33 +1,36 @@
 package db
 
 import (
+	st "auth/internal/structure"
 	"database/sql"
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 
-	st "auth/internal/structure"
 	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var database *sql.DB
-var dbFile string = "user.db"
-var dbDir string = "db"
+var (
+	dbFile = os.Getenv("DEVDBNAME")
+	dbDir  = os.Getenv("DEVDBDIR")
+)
 
 type User struct {
-	Id       int
-	UserName string
-	Name     string
-	LastName string
-	password string
-	Email    string
-	Rol      string
-	Created  string
-	Updated  string
-	Active   int
+	Id       int    `json:"id"`
+	UserName string `json:"username"`
+	Name     string `json:"name"`
+	LastName string `json:"lastname"`
+	password string `json:"-"`
+	Email    string `json:"email"`
+	Rol      string `json:"rol"`
+	Created  string `json:"created"`
+	Updated  string `json:"updated"`
+	Active   int    `json:"active"`
 }
 
 // On import from other package init function is executed first
@@ -241,12 +244,25 @@ func (u *User) Add(data *sql.DB) (lastID int64, rowsAffected int64) {
 
 // Funcion para Actualizar El usuario
 func (u *User) Update(data *sql.DB) {
-	update, err := data.Prepare("UPDATE user SET name=?, lastname=?, email=?, updated=datetime('now') WHERE id=?")
+	update, err := data.Prepare("UPDATE user SET name=?, lastname=?, email=?, rol=?, updated=datetime('now') WHERE id=?")
 	if err != nil {
 		log.Print(err)
 	}
 	// Ejecutamos la Actualizacion
-	_, err = update.Exec(u.Name, u.LastName, u.Email, u.Id)
+	_, err = update.Exec(u.Name, u.LastName, u.Email, u.Rol, u.password, u.Id)
+	if err != nil {
+		log.Print(err)
+	}
+}
+
+//Actualiza el password de una cuenta solo por id
+func (u *User) UpdatePWD(data *sql.DB) {
+	update, err := data.Prepare("UPDATE user SET password=?, updated=datetime('now') WHERE id=?")
+	if err != nil {
+		log.Print(err)
+	}
+	// Ejecutamos la Actualizacion
+	_, err = update.Exec(u.password, u.Id)
 	if err != nil {
 		log.Print(err)
 	}

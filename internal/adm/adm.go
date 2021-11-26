@@ -129,7 +129,9 @@ func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.PasswordHash(passwd.Password)
-	user.Rol = "viewer"
+	if user.Rol == "" {
+		user.Rol = "viewer"
+	}
 
 	id, rows := user.Add(data)
 	log.Print("ID: ", id, " -- Columnas: ", rows)
@@ -144,6 +146,9 @@ func addUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 // El password Se manejara en otra funcion
 // Se necesita ID Username para actualizar esta funcion correctamente
 func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
+	type Password struct {
+		Password string `json:"password,omitempty"`
+	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -154,6 +159,13 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 	user := db.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
+		log.Print("adm: edit user: unmarshal: ", err)
+		http.Error(w, "Bad Request.", 400)
+		return
+	}
+
+	passwd := Password{}
+	if err := json.Unmarshal(body, &passwd); err != nil {
 		log.Print("adm: edit user: unmarshal: ", err)
 		http.Error(w, "Bad Request.", 400)
 		return
@@ -186,6 +198,11 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	}
 	if user.Active != 0 && user.Active != lastuser.Active {
 		lastuser.Active = user.Active
+	}
+
+	if passwd.Password != "" {
+		lastuser.PasswordHash(passwd.Password)
+		lastuser.UpdatePWD(data)
 	}
 
 	lastuser.Update(data)

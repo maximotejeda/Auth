@@ -8,14 +8,23 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strings"
+	"time"
 
 	"auth/internal/db"
+	"auth/internal/emailer"
 )
 
 var database *sql.DB
-var dbFile string = "user.db"
-var dbDir string = "db"
+var dbFile string = os.Getenv("DEVDBNAME")
+var dbDir string = os.Getenv("DEVDBDIR")
+
+type responseForm struct {
+	Status  int16  `json:"status"`
+	Message string `json:"message"`
+	Token   string `json:"token,omitempty"`
+}
 
 // Main entrypoint to handle response
 func UserFunc(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +45,10 @@ func UserFunc(w http.ResponseWriter, r *http.Request) {
 			login(database, w, r)
 		case "register":
 			addUser(database, w, r)
+		case "accountrecovery":
+			recoverAccount(database, w, r)
+		case "chpwd":
+			changePassword(database, w, r)
 		default:
 			http.Error(w, "Recurso solicitado no Disponible", 404)
 		}
@@ -235,7 +248,7 @@ func deleteUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 		log.Print("Auth: deleteUser: empty user: ERROR! No user name when trying to delete an user from database.")
 		return
 	}
-	if user.Exist(data) {
+	if !user.Exist(data) {
 		http.Error(w, "User not found!.", 404)
 		return
 	}
@@ -256,7 +269,7 @@ func login(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	log.Print("Request: \n", r.RemoteAddr, "\n", r.Host)
 	type respo struct {
 		db.User
-		Token string
+		Token string `json:"token"`
 	}
 	type password struct {
 		Password string
@@ -289,10 +302,12 @@ func login(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	if result := user.ComparePasswd(passwd.Password, data); !result {
 		log.Print("Auth: compare Password: worng", user.String())
 		http.Error(w, "Bad Credentials: Incorrect user or password.", http.StatusUnauthorized)
+		return
 	}
-
+	logTime := os.Getenv("DEVLOGINDURATION")
 	user.Query(data)
-
+	r.Header.Set("TimeRequested", logTime)
+	r.Header.Set("Task", "login")
 	token := createToken(&user, r)
 	resp := respo{
 		User:  user,
@@ -301,4 +316,98 @@ func login(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	setJson(&w)
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", token))
 	json.NewEncoder(w).Encode(resp)
+}
+
+func recoverAccount(data *sql.DB, w http.ResponseWriter, r *http.Request) {
+	// Caracteristicas del mail que queremos enviar
+	// env
+	devmail := os.Getenv("DEVSMTPEMAIL")
+	mail := emailer.Emailer{
+		Copys:   []string{devmail},
+		Subject: "Recovery Account Email.",
+		Content: "",
+	}
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Print("Auth: login: readBody: ", err)
+	}
+	user := db.User{}
+	//envian username por body
+	if err := json.Unmarshal(body, &user); err != nil {
+		log.Print("recovery: unmarshal: ", err)
+	}
+	if !user.Exist(data) {
+		time.Sleep(time.Second * 1)
+		w.Write([]byte("Request procesada en breve reciviras un Email."))
+		log.Print("Auth: login: Intentando login a Usuario que no existe")
+		return
+	}
+	user.Query(data)
+	mail.Emails = append(mail.Emails, user.Email)
+	r.Header.Set("TimeRequested", "10")
+	r.Header.Set("Task", "chpwd")
+	token := createToken(&user, r)
+
+	resp := responseForm{
+		Status:  int16(200),
+		Message: "Shortly you'll recive an email with instructions on how to change your password",
+		Token:   token,
+	}
+	initbody := `
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+   <title>Password Change</title>
+</head>
+<body>
+<h1>Password Recovery Operation</h1>
+<h2>Steps to reset your Password:</h2>
+<p>If you wish to change your password click in the following link: </p>
+<p>
+`
+	endbody := `</p>
+<p>If you did not initiate a password change operation, please ignore this email.</p>
+</body>
+</html>
+`
+
+	mail.Content = initbody + "http://" + r.Host + "/chpwd?token=" + token + endbody
+	defer emailer.SendMail(mail)
+	json.NewEncoder(w).Encode(resp)
+
+}
+
+func changePassword(data *sql.DB, w http.ResponseWriter, r *http.Request) {
+	// start comprobacion
+	auth := r.Header.Get("claims")
+	if auth == "" {
+		http.Error(w, "You must be logged in to access", http.StatusUnauthorized)
+		return
+	}
+	log.Print("Calling edit authenticated ", auth)
+
+	logedUser := db.User{}
+	err := json.Unmarshal([]byte(auth), &logedUser)
+	if err != nil {
+		log.Print("Auth: deleteUser: unmarshal: ", err)
+	}
+	// Aqui auth Ends
+
+	// primero obtenemos la path
+	res := r.URL.Query()
+	user := db.User{}
+	//log.Print(r.Header)
+	token := res.Get("token")
+
+	claims, err := ExternalValidator(token)
+	if err != nil {
+		log.Print("Error validador externo: ", err)
+	}
+	err = json.Unmarshal(claims, &user)
+	if err != nil {
+		log.Print("Change pwd: unmarshal claims: ", err)
+	}
+	//log.Print(string(claims))
+
 }

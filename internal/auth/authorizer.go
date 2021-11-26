@@ -5,9 +5,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"auth/internal/db"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/maximotejeda/netrsakeys"
 )
@@ -27,16 +31,19 @@ type costumClaims struct {
 	userInfo
 }
 
+var keysDir string = os.Getenv("DEVKEYDIR")
+
 // corre al importar
 func init() {
-	netrsakeys.GenerateKeyPair("keys/")
+	//env lugar de keys
+	netrsakeys.GenerateKeyPair(keysDir)
 }
 
 // Creamos un token
 func createToken(user *db.User, r *http.Request) string {
 	var err error
 	// get private key
-	file, err := ioutil.ReadFile("keys/privateRSAKey")
+	file, err := ioutil.ReadFile(keysDir + "privateRSAKey")
 	if err != nil {
 		log.Print("Error reading Secret key", err)
 	}
@@ -45,7 +52,7 @@ func createToken(user *db.User, r *http.Request) string {
 		log.Print("Error reading Secret key", err)
 	}
 
-	verifyBytes, err := ioutil.ReadFile("keys/pubRsaKey.pub")
+	verifyBytes, err := ioutil.ReadFile(keysDir + "pubRsaKey.pub")
 	if err != nil {
 		log.Print("Error reading public key: ", err)
 	}
@@ -55,6 +62,20 @@ func createToken(user *db.User, r *http.Request) string {
 		log.Print("Error verifying public key: ", err, verifyPubKey)
 		return ""
 	}
+	var intTime int
+
+	strTime := r.Header.Get("TimeRequested")
+	if strTime != "" {
+		intTime, err = strconv.Atoi(strTime)
+		if err != nil {
+			log.Print("error geting time from request: creating token: ", err)
+		}
+	} else {
+		intTime = 30
+	}
+	task := r.Header.Get("Task")
+
+	expirationTime := time.Now().Add(time.Minute * time.Duration(intTime)).Unix()
 
 	atClaims := jwt.MapClaims{}
 	atClaims["Authorized"] = true
@@ -62,12 +83,13 @@ func createToken(user *db.User, r *http.Request) string {
 	atClaims["username"] = user.UserName
 	atClaims["rol"] = user.Rol
 	atClaims["email"] = user.Email
-	atClaims["exp"] = time.Now().Add(time.Minute * 60).Unix()
+	atClaims["exp"] = expirationTime
 	atClaims["host"] = r.Host
 	atClaims["remoteaddr"] = r.RemoteAddr
-
+	atClaims["task"] = task
 	t := jwt.New(jwt.SigningMethodRS512)
 	t.Claims = &atClaims
+
 	atString, err := t.SignedString(signedKey)
 
 	if err != nil {
@@ -76,13 +98,53 @@ func createToken(user *db.User, r *http.Request) string {
 	return atString
 }
 
+// Validador Externo del token
+func ExternalValidator(Rtoken string) ([]byte, error) {
+
+	verifyBytes, err := ioutil.ReadFile(keysDir + "pubRsaKey.pub")
+	if err != nil {
+		log.Print("Error reading public key: ", err)
+	}
+
+	verifyPubKey, err := jwt.ParseRSAPublicKeyFromPEM(verifyBytes)
+	if err != nil {
+		log.Print("Error verifying public key: ", err, verifyPubKey)
+		return nil, err
+	}
+
+	token, err := jwt.ParseWithClaims(Rtoken, &costumClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return verifyPubKey, nil
+	})
+	if err != nil {
+		log.Print("Auth: middleware: validate token: parse Token: ", err)
+
+		return nil, err
+	}
+
+	claims := token.Claims
+	jclaims, err := json.Marshal(claims)
+	if err != nil {
+		log.Print("parsing claims: ", err)
+	}
+	// Hasta aqui el token es valido y esta correcto
+	info := userInfo{}
+	err = json.Unmarshal(jclaims, &info)
+	if err != nil {
+		log.Print("parsing other claims: ", err)
+	}
+
+	return jclaims, nil
+
+}
+
 func ValidateToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if val := r.Header.Get("Authorization"); val == "" {
 			if r.Method == "PUT" || r.Method == "DELETE" || r.Method == "GET" {
-				http.Error(w, "Authentication required!", http.StatusUnauthorized)
+				http.Error(w, "Authentication required!!", http.StatusUnauthorized)
 				return
 			}
+			log.Print("in midleware", r.Header.Get("Authorization"))
 			r.Header.Set("claims", "")
 			next.ServeHTTP(w, r)
 			return
@@ -92,7 +154,7 @@ func ValidateToken(next http.Handler) http.Handler {
 		value := bearer[len("bearer "):]
 		//log.Print(token)
 
-		verifyBytes, err := ioutil.ReadFile("keys/pubRsaKey.pub")
+		verifyBytes, err := ioutil.ReadFile(keysDir + "pubRsaKey.pub")
 		if err != nil {
 			log.Print("Error reading public key: ", err)
 		}
@@ -147,6 +209,7 @@ func ValidateAdmin(next http.Handler) http.Handler {
 		if err != nil {
 			log.Print("Auth: ValidateAdmin: UserCreation: ", err)
 		}
+
 		if user.Rol != "admin" {
 			http.Error(w, "Priviledges are required!", http.StatusForbidden)
 			return
@@ -158,17 +221,13 @@ func ValidateAdmin(next http.Handler) http.Handler {
 
 func CORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		originList := []string{
+		originEnv := os.Getenv("DEVORIGINLIST")
+		originSlice := strings.Split(originEnv, ",")
 
-			"http://localhost:8000",
-			"http://www.maximotejeda.com",
-			"https://www.maximotejeda.com",
-			"htts://maximotejeda.com",
-		}
 		isInList := false
 		origin := r.Header.Get("Origin")
 		// itermos sobre los origenes si lo encontramos Break
-		for _, origi := range originList {
+		for _, origi := range originSlice {
 			if origi == origin {
 				isInList = true
 				break
