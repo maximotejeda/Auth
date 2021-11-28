@@ -77,11 +77,11 @@ func TableCreate() {
 func addAdmin(data *sql.DB) {
 
 	user := User{
-		UserName: "maximo",
-		Name:     "Maximo",
-		LastName: "tejeda",
-		Email:    "maximotejeda@gmail.com",
-		Rol:      "admin",
+		UserName: os.Getenv("DEVADMUSER"),
+		Name:     os.Getenv("DEVADMUSER"),
+		LastName: os.Getenv("DEVADMNAME"),
+		Email:    os.Getenv("DEVADMEMAIL"),
+		Rol:      os.Getenv("DEVROL"),
 		Active:   1,
 	}
 	if user.Exist(data) {
