@@ -4,4 +4,3 @@
 *.pub
 Dockerfile
 .env
-internal/emailer/
