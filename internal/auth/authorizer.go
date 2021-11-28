@@ -187,7 +187,8 @@ func ValidateToken(next http.Handler) http.Handler {
 			log.Print("parsing other claims: ", err)
 		}
 		// comprobamos los origenes y destinos del token
-		if info.Remoteaddr != r.RemoteAddr {
+		if strings.Split(info.Remoteaddr, ":")[0] != strings.Split(r.RemoteAddr, ":")[0] {
+			log.Print("ADDRSS no concuerdan", info.Remoteaddr, " : ", r.RemoteAddr)
 			http.Error(w, "Destination Error!", http.StatusForbidden)
 			return
 		}
