@@ -159,14 +159,14 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 
 	user := db.User{}
 	if err := json.Unmarshal(body, &user); err != nil {
-		log.Print("adm: edit user: unmarshal: ", err)
+		log.Print("adm: edit user: unmarshal: ", err, string(body))
 		http.Error(w, "Bad Request.", 400)
 		return
 	}
 
 	passwd := Password{}
 	if err := json.Unmarshal(body, &passwd); err != nil {
-		log.Print("adm: edit user: unmarshal: ", err)
+		log.Print("adm: edit user pwd: unmarshal: ", err)
 		http.Error(w, "Bad Request.", 400)
 		return
 	}
@@ -196,7 +196,7 @@ func editUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 	if user.Rol != "" && user.Rol != lastuser.Rol {
 		lastuser.Rol = user.Rol
 	}
-	if user.Active != 0 && user.Active != lastuser.Active {
+	if user.Active != lastuser.Active {
 		lastuser.Active = user.Active
 	}
 
@@ -231,7 +231,7 @@ func deleteUser(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 		log.Print("ERROR! No user name when trying to delete an user from database.")
 		return
 	}
-	if user.Exist(data) {
+	if !user.Exist(data) {
 		http.Error(w, "Resource not found!", 404)
 		return
 	}
