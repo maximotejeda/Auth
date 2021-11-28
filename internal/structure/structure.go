@@ -63,8 +63,14 @@ func CreaDual(path, file string) (valor bool) {
 	if err != nil {
 		log.Print("Ocurrion un Error mientras Wd")
 	}
-	if path != "" {
+	if path != "/" && path != "" {
 		_, err = CreaDirs(root + "/" + path)
+		if err != nil {
+			log.Print("Directorio inexistente: " + root + "/" + path + ", creandolo")
+			valor = true
+		}
+	} else {
+		_, err = CreaDirs(root + path)
 		if err != nil {
 			log.Print("Directorio inexistente: " + root + "/" + path + ", creandolo")
 			valor = true
