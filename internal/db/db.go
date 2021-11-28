@@ -88,7 +88,7 @@ func addAdmin(data *sql.DB) {
 		log.Print("USER Admin! alredy in database.")
 		return
 	}
-	user.PasswordHash("prueba")
+	user.PasswordHash(os.Getenv("DEVADMPWD"))
 	log.Print("Creando Usuario Administrador.")
 	user.Add(database)
 }
