@@ -244,12 +244,12 @@ func (u *User) Add(data *sql.DB) (lastID int64, rowsAffected int64) {
 
 // Funcion para Actualizar El usuario
 func (u *User) Update(data *sql.DB) {
-	update, err := data.Prepare("UPDATE user SET name=?, lastname=?, email=?, rol=?, updated=datetime('now') WHERE id=?")
+	update, err := data.Prepare("UPDATE user SET name=?, lastname=?, email=?, rol=?, active=?, updated=datetime('now') WHERE id=?")
 	if err != nil {
 		log.Print(err)
 	}
 	// Ejecutamos la Actualizacion
-	_, err = update.Exec(u.Name, u.LastName, u.Email, u.Rol, u.password, u.Id)
+	_, err = update.Exec(u.Name, u.LastName, u.Email, u.Rol, u.Active, u.Id)
 	if err != nil {
 		log.Print(err)
 	}
