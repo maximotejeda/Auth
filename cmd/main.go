@@ -23,9 +23,11 @@ func main() {
 	huser := http.HandlerFunc(auth.UserFunc)
 	hadmin := http.HandlerFunc(adm.UserFunc)
 	hrootServe := http.HandlerFunc(rootServe)
+
 	http.Handle("/user/", auth.CORS(auth.ValidateToken(huser)))
 	http.Handle("/adm/", auth.CORS(auth.ValidateToken(auth.ValidateAdmin(hadmin))))
 	http.Handle("/", auth.CORS(hrootServe))
+	http.HandleFunc("/health", health)
 	log.Fatal(http.ListenAndServe(ADDR+":"+PORT, nil))
 }
 
@@ -41,4 +43,8 @@ func rootServe(w http.ResponseWriter, r *http.Request) {
 	//http.FileServer(http.FS(index))
 	file, _ := index.ReadFile("web/index.html")
 	w.Write(file)
+}
+
+func health(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("ok"))
 }
