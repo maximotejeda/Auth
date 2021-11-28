@@ -1,0 +1,508 @@
+
+<html lang="en">
+  <head>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prueba</title>
+  </head>
+  <body>
+    <script src="//unpkg.com/alpinejs" defer></script>
+    
+    <div id="root" class="bg-gray-100">
+      <header x-data="{showUserModal: false}" class="container mx-auto">
+	<nav id="navigator" class="stycky bg-white">
+	  <ul class="flex">
+	    <li class="text-3xl">
+	      <button>
+		<svg style="width:24px;height:24px" viewBox="0 0 24 24">
+    <path fill="currentColor" d="M21 11C21 16.55 17.16 21.74 12 23C6.84 21.74 3 16.55 3 11V5L12 1L21 5V11M12 21C15.75 20 19 15.54 19 11.22V6.3L12 3.18L5 6.3V11.22C5 15.54 8.25 20 12 21M12 8.89C13.6 8.89 14.89 10.18 14.89 11.78S13.6 14.67 12 14.67 9.11 13.37 9.11 11.78 10.41 8.89 12 8.89M12 6L13.38 8C12.96 7.82 12.5 7.73 12 7.73S11.05 7.82 10.62 8L12 6M7 8.89L9.4 8.69C9.06 9 8.74 9.34 8.5 9.76C8.25 10.18 8.1 10.62 8 11.08L7 8.89M7 14.67L8.03 12.5C8.11 12.93 8.27 13.38 8.5 13.8C8.75 14.23 9.06 14.59 9.4 14.88L7 14.67M17 8.89L16 11.08C15.9 10.62 15.74 10.18 15.5 9.76C15.26 9.34 14.95 9 14.6 8.68L17 8.89M17 14.67L14.6 14.87C14.94 14.58 15.25 14.22 15.5 13.8C15.74 13.38 15.89 12.93 15.97 12.5L17 14.67M12 17.55L10.61 15.57C11.04 15.72 11.5 15.82 12 15.82C12.5 15.82 12.95 15.72 13.37 15.57L12 17.55Z" />
+</svg>
+	    </button></li>
+	    <li class="mx-auto flex-1 text-center text-3xl">Admin Pannel</li>
+	    <li class="ml-auto flex-shrink text-xl">
+	      <button @click="()=>{showUserModal = ! showUserModal}">
+		<svg style="width:35px;height:35px" viewBox="0 0 24 24"
+		     :class="$store.auth.isLoged ? 'text-blue-600' : ''"
+		     >
+		  <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" />
+		</svg>
+	      </button>
+	      <nav class="container" x-transition x-show="showUserModal" @click.outside="()=>{showUserModal = false}">
+		<ul class="flex min-w-40 z-50 absolute right-9 lg:right-32 bg-white flex-col">
+		  <li class="flex-1 hover:bg-green-100 text-center">
+		    <button
+		      @click="$store.auth.isLoged ? '' : $store.ui.toggle('login')"
+		      x-text="! $store.auth.isLoged ? 'Login' : 'Loged As ' + $store.auth.userData.userName"
+		      ></button>
+		  </li>
+		  <li class="hover:bg-green-100 text-center">
+		    <button
+		      @click="$store.auth.isLoged ? '' : $store.ui.toggle('register')"
+		      x-text="! $store.auth.isLoged ? 'Register' : $store.auth.userData.email"
+		      ></button>
+		  </li>
+		  <li class="hover:bg-green-100 text-center"
+		      x-show="$store.auth.isLoged"
+		      >
+		    <button
+		      @click="$store.auth.logMeOut"
+		      >Logout</button>
+		  </li>
+		  <li class="hover:bg-green-100 text-center">
+		    <button>About Page</button>
+		  </li>
+		</ul>
+	      </nav>
+	    </li>
+	  </ul>
+	</nav>
+	
+      </header>
+      <main x-data="">
+	<div class="mx-auto absolute inset-0 inset-y-auto">
+	<div id="logincontainer"
+	     x-transition
+	     x-show="$store.ui.showLogin"
+	     
+	     class="relative max-w-sm flex flex-col mx-auto rounded border-2 p-4 shadow-xl bg-white"
+	     @click.outside="$store.ui.showLogin = false"
+	     >
+	  
+	  <h2 class="text-5xl mb-5 font-sans text-center">Login Form</h2>
+	  <form class="flex flex-col" @submit.prevent="$store.auth.logMeIn">
+	    <div>
+	      <label class="text-2xl mr-2" for="username"> Username</label>
+	      <input
+		type="text"
+		placeholder="username"
+		name="username"
+		class="h-10 border-r-4 flex-1 border-b-2 border-purple-300 hover:border-purple-600 focus:outline-none"/>
+	    </div>
+	    <div class="flex">
+	      <label class="text-2xl mr-2" for="password"> Password</label>
+	    <input
+	      type="password"
+	      placeholder="Insert Password"
+	      name="password"
+	      min="8"
+	      class="h-10 border-r-4 flex-1 mt-4 border-b-2 border-purple-300 hover:border-purple-600 focus:outline-none"/>
+	    </div>
+	    <div class="flex">
+	      <input class="ml-auto mt-5 text-white bg-blue-500 rounded-md px-2" type="submit" value="Login">
+	    </div>
+	  </form>
+	</div>
+	</div>
+	<div class="mx-auto absolute inset-0 inset-y-auto mt-5">
+	  <div id="registercontainer"
+	       x-data="{pwd: '', mismatch: false}"
+	       x-show="$store.ui.showRegister"
+	       class=" relative flex flex-col mx-auto max-w-screen-sm  rounded border-2 p-4 shadow-xl bg-white" >
+	    <h2 class="text-5xl mb-5 text-center">Register Form</h2>
+	    <form class="flex flex-col flex-grow-0"
+		  @click.outside="$store.ui.showRegister = false"
+		  @submit.prevent="$store.auth.registerMe">
+	      <div class="mt-3 mx-auto">
+		<label class="text-2xl mr-2" for="name">Name</label>
+		<input
+		  type="text"
+		  placeholder="Name"
+		  name="name"
+		  required
+		  class="h-10 min-w-24 w-36 border-r-4 border-b-2 border-purple-300 hover:border-purple-800 focus:outline-none" />
+		<label class="text-2xl mr-2" for="lastname">Last Name</label>
+		<input
+		  type="text"
+		  placeholder="Last Name"
+		  name="lastname"
+		  required
+		  class="h-10 min-w-24 w-36 border-r-4 border-b-2 border-purple-300 hover:border-purple-600 focus:outline-none" />
+	      </div>
+	      <div class="mt-5 flex">
+		<label class="text-2xl mr-5" for="username"> Username</label>
+		<input
+		  type="text"
+		  placeholder="username"
+		  name="username"
+		  required
+		  class="h-10 border-r-4 flex-1 border-b-2 border-purple-300 hover:border-purple-600 focus:outline-none"/>
+	      </div>
+	    <div class="mt-5 flex">
+	    <label class="text-2xl mr-5" for="password"> Password</label>
+	    <input
+	      type="password"
+	      placeholder="Insert Password"
+	      name="password"
+	      min="8"
+	      required
+	      @change="
+		       (e)=>{
+		       if(!pwd){
+		         pwd = e.target.value
+			 
+		       }else {
+		       if(pwd !== e.target.value){
+		       mismatch = true
+		       }else {
+		       mismatch = false
+		       }
+		       }
+		       }
+		       
+"
+	      class="h-10 flex-1 border-r-4 border-b-2 border-purple-300 hover:border-purple-600 focus:outline-none"
+	      />
+	    </div>
+	    <div class="my-5 flex">
+	      <label class="text-2xl mr-5" for="password"> Confirm</label>
+	      <input
+		type="password"
+		placeholder="Insert Password"
+		name="confirm"
+		min="8"
+		required
+		@change="
+		       (e)=>{
+		       if(!pwd){
+		         pwd = e.target.value
+		       }else {
+		       if(pwd !== e.target.value){
+		       mismatch = true
+		       }else {
+		       mismatch = false
+		       }
+		       }
+		       }
+		       
+		       "
+		class="h-10 flex-1 border-r-4 border-b-2 border-purple-300 hover:border-purple-600 focus:outline-none"
+		/>
+	    </div>
+	    <p x-show="mismatch" class="text-red-500 mx-auto">Password dont match</p>
+	    <div class="my-5 flex">
+	      <label class="text-2xl mr-5" for="email"> Email</label>
+	      <input
+		type="email"
+		placeholder="Insert Email"
+		name="email"
+		required
+		class="h-10 flex-1 border-r-4 border-b-2 border-purple-300 hover:border-purple-600 focus:outline-none"
+		/>
+	    </div>
+	    <div class="flex">
+	      <input class="ml-auto text-white text-2xl bg-blue-500 hover:bg-blue-800 rounded-md px-2" type="submit" value="Register">
+	    </div>
+	  </form>
+	</div>
+	</div>
+	<div
+	  class="container flex bg-white mx-auto shadow mt-4">
+	  <main
+	    x-data="{user:{}}"
+	    class="flex flex-col md:flex-row w-full gap-2 mx-auto mx-auto">
+	    <section
+	      class="w-full md:w-2/5 mx-auto flex-col flex flex-grow">
+	      
+	      <form x-transition
+		    class="mx-auto flex flex-col mt-12"
+		    action="submit"
+		    x-show="$store.auth.isLoged"
+		    @submit.prevent="">
+		<label for="username" class="mx-auto text-3xl mb-6">User Selection</label><br/>
+		<select name="username"
+			@change="event => {$store.ui.user = $store.ui.users[event.target.value]}"
+			class="mx-auto">
+		    <template x-for="(user, index) in $store.ui.users">
+		      <option :value="index" x-text="user.username"></option>
+		    </template>
+		    
+		  </select>
+	      </form>
+	      <p x-show="$store.auth.isLoged && $store.ui.user.username" class="mx-auto">Selected: <b><span x-text="$store.ui.user.username" ></span></b></p>
+	      <p x-show="$store.auth.isLoged && $store.ui.user.username" class="mx-auto mt-4">Created At: <span x-text="$store.ui.user.created"></span></p>
+	      <p x-show="$store.auth.isLoged && $store.ui.user.username" class="mx-auto mt-4">Updated At: <span x-text="$store.ui.user.updated"></span></p>
+	      
+	    </section>
+	    <section
+	      class="flex-grow flex flex-col w-full mx-auto h-full">
+	      <p
+		class="text-center text-4xl mt-8"
+		x-show="$store.auth.isLoged && $store.ui.user.username"
+		x-text="'Edit User Information.'">
+		</p>
+	      <template x-if="$store.auth.isLoged && $store.ui.user.username" x-transition>
+	      <form
+		@submit.prevent="$store.ui.updateUser"
+		action="/admin/user"
+		method="PUT"
+		class="flex flex-col w-full mx-auto mt-12"
+		>
+		
+		<div class="mx-auto flex w-11/12">
+		  <div class="flex flex-col w-1/2">
+		    <label for="name">Name</label>
+		    <input
+		      type="text"
+		      max="30"
+		      min="6"
+		      name="name"
+		      class="flex-grow h-10 rounded min-w-24 border-r-4 border-b-2 border-purple-300 hover:border-purple-800 mr-5 focus:outline-none" 
+		      :value="$store.ui.user.name"/>
+		  </div>
+		  <div class="flex flex-col w-1/2">
+		    <label for="lastname">lastname</label>
+		    <input
+		      type="text"
+		      max="30"
+		      min="6"
+		      class="flex-grow h-10 min-w-24 border-r-4 border-b-2 border-purple-300 hover:border-purple-800 focus:outline-none" 
+		      name="lastname"
+		      :value="$store.ui.user.lastname"/>
+		  </div>
+		</div>
+		<div class="flex flex-col mx-auto w-11/12">
+		  <label for="username">Username</label>
+		<input
+		  type="text"
+		  max="30"
+		  min="6"
+		  disabled
+		  class="bg-gray-100 flex-grow h-10 min-w-24 border-r-4 border-b-2 border-purple-300 hover:border-purple-800 focus:outline-none" 
+		  name="username"
+		  :value="$store.ui.user.username"/>
+		</div>
+		<div class="flex flex-col mx-auto w-11/12">
+		  <label for="password">Password</label>
+		  <input
+		  type="text"
+		  max="30"
+		  min="6"
+		  class="flex-grow h-10 min-w-24 border-r-4 border-b-2 border-purple-300 hover:border-purple-800 focus:outline-none"  
+		  name="password"/>
+		</div>
+		<div class="flex flex-col mx-auto w-11/12">
+		  <label for="email">Email</label>
+		  <input
+		    type="email"
+		  max="30"
+		  min="10"
+		  name="email"
+		  class="flex-grow h-10 min-w-24 border-r-4 border-b-2 border-purple-300 hover:border-purple-800 focus:outline-none" 
+		  :value="$store.ui.user.email"/>
+		</div>
+		<div class="flex flex-col mx-auto w-11/12">
+		  <label for="rol">Rol</label>
+		<input
+		  type="text"
+		  max="30"
+		  min="6"
+		  name="rol"
+		  class="flex-grow h-10 min-w-24 border-r-4 border-b-2 border-purple-300 hover:border-purple-800 focus:outline-none" 
+		  :value="$store.ui.user.rol"/>
+		</div>
+		<div class="flex flex-col mx-auto w-11/12">
+		  <label for="active">Active User</label>
+		<input
+		  type="text"
+		  max="30"
+		  min="6"
+		  name="active"
+		  class="flex-grow h-10 min-w-24 border-r-4 border-b-2 border-purple-300 hover:border-purple-800 focus:outline-none" 
+		  :value="$store.ui.user.active"/>
+		</div>
+		<div x-data="" class="mt-8 mx-auto flex gap-24">
+		  <input type="submit"
+			 name="action"
+			 value="Edit"
+			 x-bind:user="$store.ui.user.username"
+			 class="p-4 ml-2 bg-blue-400 rounded shadow text-white"
+			 />
+		  <input type="submit"
+			 name="action"
+			 :user="$store.ui.user.username"
+			 value="Delete"
+			 class="p-4 ml-2 bg-red-400 rounded shadow text-white"
+			 />
+		</div>
+	      </form>
+	      </template>
+	    </section>
+	    <section
+	      class="w-full md:w-2/5 mx-auto flex-grow bg-yellow-500">
+	      
+	    </section>
+	  </main>
+	</div>
+      </main>
+    </div>
+    <script>
+      const server = ""
+      document.addEventListener('alpine:init', () => {
+	  Alpine.store("ui", {
+              showRegister: false,
+	      showLogin: false,
+	      users: [],
+	      user: {},
+	      
+              toggle(who) {
+		  switch( who) {
+		  case "login":		
+		      this.showRegister = false
+		      this.showLogin = !this.showLogin
+		      break
+		  case "register":
+		      this.showLogin = false
+		      this.showRegister = !this.showRegister
+		      break
+		  default:
+		      console.log("No selection.")
+		  }
+              },
+	      confirmpwd(e){
+
+	      },
+	      updateUser(e) {
+		  let action = e.submitter.value
+		  let user = Alpine.store("ui").user
+		  let datos = {}
+		  
+		  switch(action){
+		  case "Edit":
+		      
+		      if(window.confirm("Are your sure, you want to edit the user information? this action cant be undone.")){
+			  for(let key in user){
+			      if(["id", "created", "updated"].includes(key)){
+				  continue
+			      }
+			      if(e.target[key].value == user[key]){
+			      continue
+			      }
+			      datos[key] = e.target[key].value
+			 
+			  }
+			  if(e.target.password.value){
+			      datos.password = e.target.password.value
+			  }
+			  if(datos.active) datos.active = Number(datos.active)
+			  if(Object.keys(datos).length > 0){
+			      datos.username = user.username
+			      
+			      fetch(server+ "/adm/", {method: "PUT" ,body: JSON.stringify(datos), headers: {
+				  Authorization: `Bearer ${Alpine.store('auth').token}`}
+						     })
+				  .then(setTimeout(Alpine.store('auth').populate(), 1000))
+			  }
+		      
+		  }
+		      
+		      break
+		  case "Delete":
+		      let data = JSON.stringify({username: user.username})
+		      if (window.confirm("Are your sure, you want to delete the user?  this action cant be undone.")){
+			  
+			  fetch(server+ "/adm/", { method: "DELETE", body:data, headers: {
+		      Authorization: `Bearer ${Alpine.store('auth').token}`}
+						      })
+			      .then(()=>{
+				  Alpine.store("auth").populate()
+			      })
+		      }
+		      break
+		  default:
+		      return
+		  }
+	      }
+	      
+          }),
+	  Alpine.store("auth", {
+	      isLoged: false,
+	      token: "",
+	      userData: {
+		  userName: "maximo",
+		  email: "maximo@email.com",
+		  name: '',
+		  lastname: '',
+		  rol: '',
+		  id: '',
+		  created: '',
+		  updated: '',
+		  
+	      },
+	      logMeIn(e){
+		  let data = {
+		      username: e.target.username.value,
+		      password: e.target.password.value
+		  }
+		  data = JSON.stringify(data)
+		  fetch(server + "/user/login", {method: "POST", body: data})
+		      .then(res=>res.json())
+		      .then(res=>{
+			  if(res.rol === "admin"){
+			      Alpine.store("auth").userData.userName = res.username
+			      Alpine.store("auth").userData.email = res.email
+			      Alpine.store("auth").userData.name = res.name
+			      Alpine.store("auth").userData.lastname = res.lastname
+			      Alpine.store("auth").userData.rol = res.rol
+			      Alpine.store("auth").userData.id = res.id
+			      Alpine.store("auth").userData.created = res.created
+			      Alpine.store("auth").userData.updated = res.updated
+			  Alpine.store("auth").token = res.token
+			      Alpine.store("ui").showLogin = false
+			      if(Alpine.store("auth").token){
+			      Alpine.store("auth").isLoged = true
+			      Alpine.store("auth").populate()
+			  }
+			      
+			  }else {
+			      alert("You are not allow to access here.")
+			      return
+			  }
+		      })
+		      .catch(err=>console.log(err))
+	      },
+	      registerMe(e){
+		  let data = {}
+		  if(e.target.password.value !== e.target.confirm.value) return
+		  for(let item of ["name", "lastname", "username", "password", "email"]){
+		      data[item] = e.target[item].value
+		  }
+		  
+		  fetch(server + "/user/register", {method: "POST", body: JSON.stringify(data)})
+		      .then(()=>{Alpine.store('ui').toggle('login')})
+		      .catch(err=>{alert("ha ocurrido un error");console.log(err)})
+	      },
+	      logMeOut(e){
+		  Alpine.store("auth").userData.userName = ""
+		  Alpine.store("auth").userData.email = ""
+		  Alpine.store("auth").userData.name = ""
+		  Alpine.store("auth").userData.lastname = ""
+		  Alpine.store("auth").userData.rol = ""
+		  Alpine.store("auth").userData.id = ""
+		  Alpine.store("auth").token = ""
+		  Alpine.store("auth").isLoged = false
+			  
+	      },
+	      populate(){
+		  if (!Alpine.store('auth').isLoged){
+		      return
+		  }
+		  console.log("calling populate")
+		  fetch(server+ "/adm/users", { headers: {
+		      Authorization: `Bearer ${Alpine.store('auth').token}`}
+					     })
+		      .then(res=>res.json())
+		      .then(res=>{
+			  if(res){
+			      Alpine.store("ui").users = res.filter(val=>val.rol !== "admin")
+			      return
+			  }
+		      })
+		      .catch(err=>console.log(err));
+	      }
+	  })
+      })
+    </script>
+  </body>
+</html>
