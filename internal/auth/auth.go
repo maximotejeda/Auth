@@ -328,6 +328,9 @@ func recoverAccount(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 		Content: "",
 	}
 
+	origin := r.Header.Get("Origin")
+	origin = strings.Replace(origin, "api.", "", 1)
+	log.Print(origin)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Print("Auth: login: readBody: ", err)
@@ -372,7 +375,7 @@ func recoverAccount(data *sql.DB, w http.ResponseWriter, r *http.Request) {
 </html>
 `
 
-	mail.Content = initbody + "http://" + r.Host + "/chpwd?token=" + token + endbody
+	mail.Content = initbody + origin + "/chpwd?token=" + token + endbody
 	defer emailer.SendMail(mail)
 	json.NewEncoder(w).Encode(resp)
 

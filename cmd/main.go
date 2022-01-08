@@ -23,10 +23,11 @@ func main() {
 	huser := http.HandlerFunc(auth.UserFunc)
 	hadmin := http.HandlerFunc(adm.UserFunc)
 	hrootServe := http.HandlerFunc(rootServe)
+	validate, cors, validateADM := auth.ValidateToken, auth.CORS, auth.ValidateAdmin
 
-	http.Handle("/user/", auth.CORS(auth.ValidateToken(huser)))
-	http.Handle("/adm/", auth.CORS(auth.ValidateToken(auth.ValidateAdmin(hadmin))))
-	http.Handle("/", auth.CORS(hrootServe))
+	http.Handle("/user/", validate(huser))
+	http.Handle("/adm/", validate(validateADM(hadmin)))
+	http.Handle("/", cors(hrootServe))
 	http.HandleFunc("/health", health)
 	log.Fatal(http.ListenAndServe(ADDR+":"+PORT, nil))
 }
