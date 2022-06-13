@@ -14,6 +14,8 @@
     2. Webapps in Go 
     3. Get Programming With Go
 
+    
+
   - Desiciones:
     Podria ser un poco asertado por mi parte, pero he decidido adoptar en todo lo posible la stdlib de go para realizar la mayoria de los procesos de la api, siempre intentando no reinventar la rueda.
 
